@@ -1,0 +1,100 @@
+# import socket programming library
+import socket
+from requests import get
+
+# import thread module
+from _thread import *
+import threading
+
+print_lock = threading.Lock()
+
+FORMAT = "utf-8"
+IP = socket.gethostbyname(socket.gethostname())
+external_ip = get('https://api.ipify.org').text
+port = 12347
+SIZE = 1024
+DISCONNECT_MSG = "!DISCONNECT"
+
+listofoptions = []
+
+
+def threaded(c, addr):
+    while True:
+        # data received from client
+        try:
+            data = c.recv(1024)
+            data = ((data.decode('utf-8')))
+            if data == 'hey, server':
+                c.send('CONN'.encode(FORMAT))
+            if len(listofsockets) == 2:
+                listofsockets[0][0].send('white'.encode('utf-8'))
+                listofsockets[1][0].send('black'.encode('utf-8'))
+            print(data, ' received from ', addr[0], ':', addr[1])
+            if not data:
+                print(addr, ' has disconnected.')
+
+                # lock released on exit
+                print_lock.release()
+                break
+            if data == 'switch' or data == 'stay':
+                if len(listofoptions) == 0 or (len(listofoptions) == 1 and addr[1] != listofoptions[0][1]):
+                    listofoptions.append([data, addr[1]])
+                    if len(listofoptions) == 2:
+                        if listofoptions[0][0] == listofoptions[1][0]:
+                            listofsockets[0][0].send(data.encode(FORMAT))
+                            listofsockets[1][0].send(data.encode(FORMAT))
+                            listofoptions.clear()
+                        else:
+                            listofsockets[0][0].send('diff'.encode(FORMAT))
+                            listofsockets[1][0].send('diff'.encode(FORMAT))
+                            listofoptions.clear()
+
+            # send info to the other client
+            if len(listofsockets) == 2 and data != 'switch' and data != 'stay' and data != 'hey, server':
+                if listofsockets.index((c, addr[0], addr[1])) == 0:
+                    listofsockets[1][0].send(data.encode(FORMAT))
+                elif listofsockets.index((c, addr[0], addr[1])) == 1:
+                    listofsockets[0][0].send(data.encode(FORMAT))
+        except:
+            print(addr, ' has disconnected.')
+            if listofsockets.index((c, addr[0], addr[1])) == 0:
+                listofsockets[1][0].send('OD'.encode(FORMAT))
+            elif listofsockets.index((c, addr[0], addr[1])) == 1:
+                listofsockets[0][0].send('OD'.encode(FORMAT))
+            break
+
+    # connection closed
+    c.close()
+
+listofsockets = []
+turn = 1
+
+def Main():
+    print("[STARTING] Server is starting...")
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((IP, port))
+    print("IP for local connection: ", IP, ":", port)
+    print("IP for external connection: ", external_ip, ":", port)
+    # put the socket into listening mode
+    print(f"[LISTENING] Server is listening")
+    # a forever loop until client wants to exit
+    while True:
+        s.listen(2)
+        # establish connection with client
+        c, addr = s.accept()
+
+        print('Connected to :', addr[0], ':', addr[1])
+
+        listofsockets.append((c, addr[0], addr[1]))
+
+        if len(listofsockets) == 1:
+            print('Waiting for 2nd player to connect')
+
+        # lock acquired by client
+
+        # Start a new thread and return its identifier
+        start_new_thread(threaded, (c, addr))
+        print_lock.acquire()
+
+
+Main()

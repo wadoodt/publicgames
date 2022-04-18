@@ -1,0 +1,2116 @@
+import pygame, sys
+import os
+from _thread import *
+import threading
+import socket
+import time
+import datetime
+
+print_lock = threading.Lock()
+pygame.init()
+
+white, black, red, blue, brown, green = (255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 0, 255), (150, 75, 0), (0, 255, 0)
+WIDTH, HEIGHT, = 1000, 800
+WINNER_FONT = pygame.font.SysFont('comicsans', 100)
+timer_FONT = pygame.font.SysFont('comicsans', 50)
+
+characterwidth, characterheight = 100, 100
+
+white_pieces = ['wQ', 'wK', 'wb', 'wk', 'wr', 'wp']
+black_pieces = ['bQ', 'bK', 'bb', 'bk', 'br', 'bp']
+
+wK = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEKING.png')),
+                            (characterwidth, characterheight))
+wQ = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEQUEEN.png')),
+                            (characterwidth, characterheight))
+wr = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEROOK.png')),
+                            (characterwidth, characterheight))
+wp = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEPAWN.png')),
+                            (characterwidth, characterheight))
+wb = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEBISHOP.png')),
+                            (characterwidth, characterheight))
+wk = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEKNIGHT.png')),
+                            (characterwidth, characterheight))
+wQs = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEQUEEN.png')),
+                             (characterwidth / 2, characterheight / 2))
+wrs = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEROOK.png')),
+                             (characterwidth / 2, characterheight / 2))
+wbs = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEBISHOP.png')),
+                             (characterwidth / 2, characterheight / 2))
+wks = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'WHITEKNIGHT.png')),
+                             (characterwidth / 2, characterheight / 2))
+
+bK = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKKING.png')),
+                            (characterwidth, characterheight))
+bQ = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKQUEEN.png')),
+                            (characterwidth, characterheight))
+br = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKROOK.png')),
+                            (characterwidth, characterheight))
+bp = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKPAWN.png')),
+                            (characterwidth, characterheight))
+bb = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKBISHOP.png')),
+                            (characterwidth, characterheight))
+bk = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKKNIGHT.png')),
+                            (characterwidth, characterheight))
+bQs = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKQUEEN.png')),
+                             (characterwidth / 2, characterheight / 2))
+brs = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKROOK.png')),
+                             (characterwidth / 2, characterheight / 2))
+bbs = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKBISHOP.png')),
+                             (characterwidth / 2, characterheight / 2))
+bks = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'BLACKKNIGHT.png')),
+                             (characterwidth / 2, characterheight / 2))
+greycircle = pygame.transform.scale(pygame.image.load(os.path.join('Assets', 'greycircle.png')),
+                                    (characterwidth, characterheight))
+
+
+def switch():
+    print('New game, switch sides')
+    global wanna_continue, list_of_white_pieces, list_of_black_pieces, choosethepiece, white_turn, black_turn, pause, board, we_are_black_pieces, we_are_white_pieces, moved, thecolourrr, firstchoice, secondchoice, secondtile, secondclick, didtherookmoveoneb, didthekingmoveblack, didtherookmovetwob, didthekingmovethoughwhite, didtherookmoveonewhite, didtherookmovetwowhite, timebeing, your_opponent_time
+    if we_are_white_pieces:
+        we_are_white_pieces = False
+        we_are_black_pieces = True
+        thecolourrr = 'black'
+    elif we_are_black_pieces:
+        we_are_white_pieces = True
+        we_are_black_pieces = False
+        thecolourrr = 'white'
+        moved = False
+    board = [['br', 'bk', 'bb', 'bQ', 'bK', 'bb', 'bk', 'br'], \
+             ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'], \
+             ['', '', '', '', '', '', '', ''], \
+             ['', '', '', '', '', '', '', ''], \
+             ['', '', '', '', '', '', '', ''], \
+             ['', '', '', '', '', '', '', ''], \
+             ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'], \
+             ['wr', 'wk', 'wb', 'wQ', 'wK', 'wb', 'wk', 'wr']]
+    white_turn, black_turn = True, False
+    updatethepieces()
+    didtherookmoveoneb = 0
+    didthekingmoveblack = 0
+    didtherookmovetwob = 0
+    didthekingmovethoughwhite = 0
+    didtherookmoveonewhite = 0
+    didtherookmovetwowhite = 0
+    timebeing = 600
+    your_opponent_time = 600
+    pause = False
+
+
+def stay():
+    print('New game, same sides')
+    global white_turn, black_turn, pause, board, we_are_black_pieces, we_are_white_pieces, moved, didtherookmoveoneb, didthekingmoveblack, didtherookmovetwob, didthekingmovethoughwhite, didtherookmoveonewhite, didtherookmovetwowhite, timebeing, your_opponent_time
+    board = [['br', 'bk', 'bb', 'bQ', 'bK', 'bb', 'bk', 'br'], \
+             ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'], \
+             ['', '', '', '', '', '', '', ''], \
+             ['', '', '', '', '', '', '', ''], \
+             ['', '', '', '', '', '', '', ''], \
+             ['', '', '', '', '', '', '', ''], \
+             ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'], \
+             ['wr', 'wk', 'wb', 'wQ', 'wK', 'wb', 'wk', 'wr']]
+    white_turn, black_turn = True, False
+    updatethepieces()
+    didtherookmoveoneb = 0
+    didthekingmoveblack = 0
+    didtherookmovetwob = 0
+    didthekingmovethoughwhite = 0
+    didtherookmoveonewhite = 0
+    didtherookmovetwowhite = 0
+    timebeing = 600
+    your_opponent_time = 600
+    pause = False
+    if we_are_white_pieces:
+        moved = False
+
+
+def sendinfo(a, b, c):
+    print('Sending data')
+    s.send(str((a, b, c)).encode('utf-8'))
+
+
+def threaded(a, b):
+    global blackwon, whitewon, moved, initiation_process, do
+    while True:
+        try:
+            data = s.recv(1024)
+            data = data.decode('utf-8')
+            not_game = 0
+            if data == 'OD':
+                print('Your opponent has left the server, you may also leave the server by closing the window')
+            if data[2] == 'w' or data[2] == 'b':
+                try:
+                    enemy_piece_moved(data[2:4], [int(data[9]), int(data[12])], [int(data[19]), int(data[22])])
+                except Exception:
+                    not_game = 1
+            if data != 'switch' and data != 'stay' and data != 'diff' and not_game == 1:
+                print(data, ' has been received')
+            elif data == 'switch':
+                time.sleep(0.4)
+                switch()
+                initiation_process = False
+            elif data == 'stay':
+                time.sleep(0.4)
+                stay()
+                initiation_process = False
+            elif data == 'diff':
+                if wanna_continue == 'stay':
+                    time.sleep(0.4)
+                    print('Your opponent wants to switch sides')
+                elif wanna_continue == 'switch':
+                    time.sleep(0.4)
+                    print('Your opponent wants to stay on the same sides')
+                    do = True
+        except:
+            if run:
+                print('Disconnected from the server. Restart the server and reconnect in order to play again.')
+            break
+
+
+def thread_window(a, b):
+    while run:
+        draw_window(thecolourrr)
+        if winner_text != "":
+            draw_window(thecolourrr)
+            time.sleep(0.5)
+            draw_winner(winner_text)
+            pygame.time.delay(5000)
+
+
+def thread_timer(a, b):
+    global timebeing, your_opponent_time, whitewon, blackwon, run, pause
+    pause = False
+    while run:
+        if not pause:
+            if timebeing > 0 and your_opponent_time > 0:
+                if we_are_white_pieces:
+                    if white_turn:
+                        time.sleep(0.5)
+                        time.sleep(0.5)
+                        timebeing -= 1
+                    elif black_turn:
+                        time.sleep(0.5)
+                        time.sleep(0.5)
+                        your_opponent_time -= 1
+                elif we_are_black_pieces:
+                    if white_turn:
+                        time.sleep(0.5)
+                        time.sleep(0.5)
+                        your_opponent_time -= 1
+                    elif black_turn:
+                        time.sleep(0.5)
+                        time.sleep(0.5)
+                        timebeing -= 1
+            elif timebeing <= 0:
+                if we_are_white_pieces:
+                    blackwon = True
+                else:
+                    whitewon = True
+                pause = True
+            elif your_opponent_time <= 0:
+                if we_are_white_pieces:
+                    whitewon = True
+                else:
+                    blackwon = True
+                pause = True
+
+
+def enemy_piece_moved(piece, pos, place):
+    global moved, blackwon, whitewon
+    board[place[0]][place[1]] = piece
+    board[pos[0]][pos[1]] = ''
+    updatethepieces()
+    turnchange()
+    moved = False
+    if piece in black_pieces:
+        isitawinwin('black')
+    elif piece in white_pieces:
+        isitawinwin('white')
+    if blackwon == False and whitewon == False:
+        print('Your Turn now')
+
+
+def turnchange():
+    global white_turn, black_turn
+    if white_turn == True:
+        white_turn, black_turn = False, True
+    else:
+        black_turn, white_turn = False, True
+
+
+def isitawinwin(colour):
+    global whitewon, blackwon
+    win = True
+    if colour == 'white':
+        for h in list_of_black_pieces:
+            t = potential_moves(h[0], h[1])
+            if len(t) != 0:
+                win = False
+    elif colour == 'black':
+        for h in list_of_white_pieces:
+            t = potential_moves(h[0], h[1])
+            if len(t) != 0:
+                win = False
+    if win == True and colour == 'black':
+        blackwon = True
+    if win == True and colour == 'white':
+        whitewon = True
+
+
+def remdup(l):
+    a = []
+    for i in l:
+        if i not in a:
+            a.append(i)
+    return a
+
+
+def movement(piece, pos, place):
+    global pospos, moved, didtherookmoveoneb, didtherookmoveonewhite, didtherookmovetwob, didthekingmoveblack, didtherookmovetwowhite, didthekingmovethoughwhite, white_turn, black_turn, choosethepiece
+    if piece == 'wK':
+        if place == [7, 2] and didtherookmoveonewhite == 0 and didthekingmovethoughwhite == 0:
+            didtherookmoveonewhite = 1
+            board[7][2] = 'wK'
+            board[7][3] = 'wr'
+            board[7][0], board[7][4] = '', ''
+        elif place == [7, 6] and didtherookmovetwowhite == 0 and didthekingmovethoughwhite == 0:
+            didtherookmovetwowhite = 1
+            board[7][6] = 'wK'
+            board[7][5] = 'wr'
+            board[7][7], board[7][4] = '', ''
+        else:
+            board[pos[0]][pos[1]] = ''
+            board[place[0]][place[1]] = 'wK'
+        didthekingmovethoughwhite = 1
+        sendinfo(piece, str(pos), str(place))
+        moved = True
+        turnchange()
+    elif piece == 'bK':
+        if place == [0, 2] and didtherookmoveoneb == 0 and didthekingmoveblack == 0:
+            didtherookmoveoneb = 1
+            board[0][2] = 'bK'
+            board[0][3] = 'br'
+            board[0][4], board[0][0] = '', ''
+        elif place == [0, 6] and didtherookmovetwob == 0 and didthekingmoveblack == 0:
+            didtherookmoveoneb = 1
+            board[0][6] = 'bK'
+            board[0][5] = 'br'
+            board[0][4], board[0][7] = '', ''
+            didtherookmoveoneb = 1
+        else:
+            board[pos[0]][pos[1]] = ''
+            board[place[0]][place[1]] = 'bK'
+        didthekingmoveblack = 1
+        sendinfo(piece, str(pos), str(place))
+        moved = True
+        turnchange()
+    elif piece == 'wr':
+        if pos == [7, 0]:
+            didtherookmoveonewhite = 1
+        elif pos == [7, 7]:
+            didtherookmovetwowhite = 1
+        board[pos[0]][pos[1]] = ''
+        board[place[0]][place[1]] = 'wr'
+        turnchange()
+        sendinfo(piece, str(pos), str(place))
+        moved = True
+    elif piece == 'br':
+        if pos == [0, 0]:
+            didtherookmovetwob = 1
+        elif pos == [0, 7]:
+            didtherookmoveoneb = 1
+        board[pos[0]][pos[1]] = ''
+        board[place[0]][place[1]] = 'br'
+        turnchange()
+        sendinfo(piece, str(pos), str(place))
+        moved = True
+    elif piece == 'wp' and place[0] == 0:
+        board[place[0]][place[1]] = ''
+        board[pos[0]][pos[1]] = ''
+        pospos = pos
+        choosethepiece = place
+    elif piece == 'bp' and place[0] == 7:
+        board[place[0]][place[1]] = ''
+        board[pos[0]][pos[1]] = ''
+        pospos = pos
+        choosethepiece = place
+    else:
+        board[place[0]][place[1]] = piece
+        board[pos[0]][pos[1]] = ''
+        sendinfo(piece, str(pos), str(place))
+        moved = True
+        turnchange()
+    if piece in black_pieces:
+        isitawinwin('black')
+    elif piece in white_pieces:
+        isitawinwin('white')
+
+
+def howtoplace(i, counter, y):
+    if i == 'wp':
+        Display.blit(wp, (counter * 100, y * 100))
+    elif i == 'wK':
+        Display.blit(wK, (counter * 100, y * 100))
+    elif i == 'wQ':
+        Display.blit(wQ, (counter * 100, y * 100))
+    elif i == 'wr':
+        Display.blit(wr, (counter * 100, y * 100))
+    elif i == 'wk':
+        Display.blit(wk, (counter * 100, y * 100))
+    elif i == 'wb':
+        Display.blit(wb, (counter * 100, y * 100))
+    elif i == 'bK':
+        Display.blit(bK, (counter * 100, y * 100))
+    elif i == 'bQ':
+        Display.blit(bQ, (counter * 100, y * 100))
+    elif i == 'bp':
+        Display.blit(bp, (counter * 100, y * 100))
+    elif i == 'bk':
+        Display.blit(bk, (counter * 100, y * 100))
+    elif i == 'br':
+        Display.blit(br, (counter * 100, y * 100))
+    elif i == 'bb':
+        Display.blit(bb, (counter * 100, y * 100))
+
+
+def place_figure(a):
+    if a == 'white':
+        y = -1
+        for j in board:
+            y += 1
+            counter = -1
+            for i in j:
+                counter = counter + 1
+                howtoplace(i, counter, y)
+    elif a == 'black':
+        y = 8
+        for j in board:
+            y -= 1
+            counter = 8
+            for i in j:
+                counter -= 1
+                howtoplace(i, counter, y)
+
+
+def updatethepieces():
+    list_of_white_pieces.clear()
+    list_of_black_pieces.clear()
+    a = -1
+    for i in board:
+        a += 1
+        b = -1
+        for x in i:
+            b += 1
+            if x in white_pieces:
+                list_of_white_pieces.append([x, [a, b]])
+    a = -1
+    for i in board:
+        a += 1
+        b = -1
+        for x in i:
+            b += 1
+            if x in black_pieces:
+                list_of_black_pieces.append([x, [a, b]])
+
+
+def potential_danger_for_the_piece_white(a):
+    listforking = [[1, -1], [1, 0], [1, 1], [0, 1], [0, -1], [-1, 1], [-1, 0], [-1, -1]]
+    listforknight = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]
+    check, b, thechecktiles = [], list([a[0] - 1, a[1] + 1]), []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:
+        piece = board[b[0]][b[1]]  # top_right
+        if piece == 'bQ' or piece == 'bb':
+            check.append([[-1, 1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'bQ' and piece != 'bb':
+            break
+        b[0], b[1] = b[0] - 1, b[1] + 1
+    b, preventor, thechecktiles = list([a[0] - 1, a[1] - 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # top_left
+        piece = board[b[0]][b[1]]
+        if piece == 'bQ' or piece == 'bb':
+            check.append([[-1, -1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'bQ' and piece != 'bb':
+            break
+        b[0], b[1] = b[0] - 1, b[1] - 1
+    b, preventor, thechecktiles = list([a[0] + 1, a[1] - 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # down_left
+        piece = board[b[0]][b[1]]
+        if piece == 'bQ' or piece == 'bb':
+            check.append([[1, -1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'bQ' and piece != 'bb':
+            break
+        b[0], b[1] = b[0] + 1, b[1] - 1
+    b, preventor, thechecktiles = list([a[0] + 1, a[1] + 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # down_right
+        piece = board[b[0]][b[1]]
+        if piece == 'bQ' or piece == 'bb':
+            check.append([[1, 1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'bQ' and piece != 'bb':
+            break
+        b[0], b[1] = b[0] + 1, b[1] + 1
+    b, preventor, thechecktiles = list([a[0] - 1, a[1]]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # up
+        piece = board[b[0]][b[1]]
+        if piece == 'bQ' or piece == 'br':
+            check.append([[-1, 0], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'bQ' and piece != 'br':
+            break
+        b[0], b[1] = b[0] - 1, b[1]
+    b, preventor, thechecktiles = list([a[0] + 1, a[1]]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # down
+        piece = board[b[0]][b[1]]
+        if piece == 'bQ' or piece == 'br':
+            check.append([[1, 0], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'bQ' and piece != 'br':
+            break
+        b[0], b[1] = b[0] + 1, b[1]
+    b, preventor, thechecktiles = list([a[0], a[1] + 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # right
+        piece = board[b[0]][b[1]]
+        if piece == 'bQ' or piece == 'br':
+            check.append([[0, 1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'bQ' and piece != 'br':
+            break
+        b[0], b[1] = b[0], b[1] + 1
+    b, preventor, thechecktiles = list([a[0], a[1] - 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # left
+        piece = board[b[0]][b[1]]
+        if piece == 'bQ' or piece == 'br':
+            check.append([[0, -1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'bQ' and piece != 'br':
+            break
+        b[0], b[1] = b[0], b[1] - 1
+    for knight in listforknight:
+        try:
+            if -1 < a[0] + knight[0] < 8 and -1 < a[1] + knight[1] < 8:
+                if board[a[0] + knight[0]][a[1] + knight[1]] == 'bk':
+                    check.append([[a[0] + knight[0], a[1] + knight[1]], 'bk', 'knight special'])
+        except IndexError:
+            pass
+    for q in listforking:
+        try:
+            if board[a[0] + q[0]][a[1] + q[1]] == 'bK':
+                check.append([[a[0] + q[0], a[1] + q[1]], 'bK', 'king special'])
+        except IndexError:
+            pass
+    if board[a[0] - 1][a[1] - 1] == 'bp':
+        check.append([[-1, 1], 'bp', 'pawn special'])
+    if board[a[0] - 1][a[1] + 1] == 'bp':
+        check.append([[-1, 1], 'bp', 'pawn special'])
+    return check
+
+
+def potential_danger_for_the_piece_black(a):
+    listforking = [[1, -1], [1, 0], [1, 1], [0, 1], [0, -1], [-1, 1], [-1, 0], [-1, -1]]
+    listforknight = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]
+    check, b, thechecktiles = [], list([a[0] - 1, a[1] + 1]), []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:
+        piece = board[b[0]][b[1]]  # top_right
+        if piece == 'wQ' or piece == 'wb':
+            check.append([[-1, 1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'wQ' and piece != 'wb':
+            break
+        b[0], b[1] = b[0] - 1, b[1] + 1
+    b, preventor, thechecktiles = list([a[0] - 1, a[1] - 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # top_left
+        piece = board[b[0]][b[1]]
+        if piece == 'wQ' or piece == 'wb':
+            check.append([[-1, -1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'wQ' and piece != 'wb':
+            break
+        b[0], b[1] = b[0] - 1, b[1] - 1
+    b, preventor, thechecktiles = list([a[0] + 1, a[1] - 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # down_left
+        piece = board[b[0]][b[1]]
+        if piece == 'wQ' or piece == 'wb':
+            check.append([[1, -1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'wQ' and piece != 'wb':
+            break
+        b[0], b[1] = b[0] + 1, b[1] - 1
+    b, preventor, thechecktiles = list([a[0] + 1, a[1] + 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # down_right
+        piece = board[b[0]][b[1]]
+        if piece == 'wQ' or piece == 'wb':
+            check.append([[1, 1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'wQ' and piece != 'wb':
+            break
+        b[0], b[1] = b[0] + 1, b[1] + 1
+    b, preventor, thechecktiles = list([a[0] - 1, a[1]]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # up
+        piece = board[b[0]][b[1]]
+        if piece == 'wQ' or piece == 'wr':
+            check.append([[-1, 0], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'wQ' and piece != 'wr':
+            break
+        b[0], b[1] = b[0] - 1, b[1]
+    b, preventor, thechecktiles = list([a[0] + 1, a[1]]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # down
+        piece = board[b[0]][b[1]]
+        if piece == 'wQ' or piece == 'wr':
+            check.append([[1, 0], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'wQ' and piece != 'wr':
+            break
+        b[0], b[1] = b[0] + 1, b[1]
+    b, preventor, thechecktiles = list([a[0], a[1] + 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # right
+        piece = board[b[0]][b[1]]
+        if piece == 'wQ' or piece == 'wr':
+            check.append([[0, 1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'wQ' and piece != 'wr':
+            break
+        b[0], b[1] = b[0], b[1] + 1
+    b, preventor, thechecktiles = list([a[0], a[1] - 1]), [], []
+    while 8 > b[0] > -1 and -1 < b[1] < 8:  # left
+        piece = board[b[0]][b[1]]
+        if piece == 'wQ' or piece == 'wr':
+            check.append([[0, -1], board[b[0]][b[1]]])
+            break
+        elif piece != '' and piece != 'wQ' and piece != 'wr':
+            break
+        b[0], b[1] = b[0], b[1] - 1
+    for knight in listforknight:
+        try:
+            if -1 < a[0] + knight[0] < 8 and -1 < a[1] + knight[1] < 8:
+                if board[a[0] + knight[0]][a[1] + knight[1]] == 'wk':
+                    check.append([[a[0] + knight[0], a[1] + knight[1]], 'wk', 'knight special'])
+        except IndexError:
+            pass
+    for q in listforking:
+        try:
+            if board[a[0] + q[0]][a[1] + q[1]] == 'wK':
+                check.append([[a[0] + q[0], a[1] + q[1]], 'wK', 'king special'])
+        except IndexError:
+            pass
+    if board[a[0] - 1][a[1] - 1] == 'wp':
+        check.append([[-1, 1], 'wp', 'pawn special'])
+    if board[a[0] - 1][a[1] + 1] == 'wp':
+        check.append([[-1, 1], 'wp', 'pawn special'])
+    return check
+
+
+def checkwhite(a):
+    listforking = [[1, -1], [1, 0], [1, 1], [0, 1], [0, -1], [-1, 1], [-1, 0], [-1, -1]]
+    listforknight = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]
+    check, preventing, wKpos, preventor, line = [], [], list([a[0] - 1, a[1] + 1]), [], []
+    while wKpos[0] > -1 and wKpos[1] < 8:  # topright
+        if board[wKpos[0]][wKpos[1]] in ['bb', 'bQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in white_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['bp', 'bK', 'bk', 'br'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'bb', 'bQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['bb', 'bQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] -= 1
+        wKpos[1] += 1
+    wKpos, preventor, line = list([a[0] - 1, a[1] - 1]), [], []
+    while wKpos[0] > -1 and wKpos[1] > -1:  # topleft
+        if board[wKpos[0]][wKpos[1]] in ['bb', 'bQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in white_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['bp', 'bK', 'bk', 'br'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'bb', 'bQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['bb', 'bQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] -= 1
+        wKpos[1] -= 1
+    wKpos, preventor, line = list([a[0] + 1, a[1] - 1]), [], []
+    while wKpos[0] < 8 and wKpos[1] > -1:  # bottomleft
+        if board[wKpos[0]][wKpos[1]] in ['bb', 'bQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in white_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['bp', 'bK', 'bk', 'br'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'bb', 'bQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['bb', 'bQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] += 1
+        wKpos[1] -= 1
+    wKpos, preventor, line = list([a[0] + 1, a[1] + 1]), [], []
+    while wKpos[0] < 8 and wKpos[1] < 8:  # bottomright
+        if board[wKpos[0]][wKpos[1]] in ['bb', 'bQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in white_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['bp', 'bK', 'bk', 'br'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'bb', 'bQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['bb', 'bQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] += 1
+        wKpos[1] += 1
+    wKpos, preventor, line = list([a[0] - 1, a[1]]), [], []
+    while wKpos[0] > -1:  # top
+        if board[wKpos[0]][wKpos[1]] in ['br', 'bQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1]
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in white_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['bp', 'bK', 'bk', 'bb'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'br', 'bQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['br', 'bQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1]
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] -= 1
+    wKpos, preventor, line = list([a[0] + 1, a[1]]), [], []
+    while wKpos[0] < 8:  # down
+        if board[wKpos[0]][wKpos[1]] in ['br', 'bQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1]
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in white_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['bp', 'bK', 'bk', 'bb'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'br', 'bQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['br', 'bQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1]
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] += 1
+    wKpos, preventor, line = list([a[0], a[1] + 1]), [], []
+    while wKpos[1] < 8:  # right
+        if board[wKpos[0]][wKpos[1]] in ['br', 'bQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[1] - dummy[1]) - 1):
+                dummy[0], dummy[1] = dummy[0], dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in white_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['bp', 'bK', 'bk', 'bb'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'br', 'bQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['br', 'bQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[1] - dummy[1]) - 1):
+                dummy[0], dummy[1] = dummy[0], dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[1] += 1
+    wKpos, preventor, line = list([a[0], a[1] - 1]), [], []
+    while wKpos[1] > -1:  # left
+        if board[wKpos[0]][wKpos[1]] in ['br', 'bQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[1] - dummy[1]) - 1):
+                dummy[0], dummy[1] = dummy[0], dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in white_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['bp', 'bK', 'bk', 'bb'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'br', 'bQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['br', 'bQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[1] - dummy[1]) - 1):
+                dummy[0], dummy[1] = dummy[0], dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[1] -= 1
+    for knight in listforknight:
+        try:
+            if -1 < a[0] + knight[0] < 8 and -1 < a[1] + knight[1] < 8:
+                if board[a[0] + knight[0]][a[1] + knight[1]] == 'bk':
+                    check.append(['bk', [a[0] + knight[0], a[1] + knight[1]], []])
+        except IndexError:
+            pass
+    if board[a[0] - 1][a[1] - 1] == 'bp':
+        check.append(['bp', [a[0] - 1, a[1] - 1], []])
+    if board[a[0] - 1][a[1] + 1] == 'bp':
+        check.append(['bp', [a[0] - 1, a[1] + 1], []])
+    return [check, preventing]
+
+
+def checkblack(a):
+    listforking = [[1, -1], [1, 0], [1, 1], [0, 1], [0, -1], [-1, 1], [-1, 0], [-1, -1]]
+    listforknight = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]
+    check, preventing, wKpos, preventor, line = [], [], [a[0] - 1, a[1] + 1], [], []
+    while wKpos[0] > -1 and wKpos[1] < 8:  # topright
+        if board[wKpos[0]][wKpos[1]] in ['wb', 'wQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in black_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['wp', 'wK', 'wk', 'wr'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'wb', 'wQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['wb', 'wQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] -= 1
+        wKpos[1] += 1
+    wKpos, preventor, line = [a[0] - 1, a[1] - 1], [], []
+    while wKpos[0] > -1 and wKpos[1] > -1:  # topleft
+        if board[wKpos[0]][wKpos[1]] in ['wb', 'wQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in black_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['wp', 'wK', 'wk', 'wr'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'wb', 'wQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['wb', 'wQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] -= 1
+        wKpos[1] -= 1
+    wKpos, preventor, line = [a[0] + 1, a[1] - 1], [], []
+    while wKpos[0] < 8 and wKpos[1] > -1:  # bottomleft
+        if board[wKpos[0]][wKpos[1]] in ['wb', 'wQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in black_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['wp', 'wK', 'wk', 'wr'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'wb', 'wQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['wb', 'wQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] += 1
+        wKpos[1] -= 1
+    wKpos, preventor, line = [a[0] + 1, a[1] + 1], [], []
+    while wKpos[0] < 8 and wKpos[1] < 8:  # bottomright
+        line.append(list(wKpos))
+        if board[wKpos[0]][wKpos[1]] in ['wb', 'wQ'] and preventor == []:
+            line.pop()
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in black_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['wp', 'wK', 'wk', 'wr'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'wb', 'wQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['wb', 'wQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] += 1
+        wKpos[1] += 1
+    wKpos, preventor, line = [a[0] - 1, a[1]], [], []
+    while wKpos[0] > -1:  # down
+        line.append(list(wKpos))
+        if board[wKpos[0]][wKpos[1]] in ['wr', 'wQ'] and preventor == []:
+            line.pop()
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1]
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in black_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['wp', 'wK', 'wk', 'wb'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'wr', 'wQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['wr', 'wQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] - 1, dummy[1]
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] -= 1
+    wKpos, preventor, line = [a[0] + 1, a[1]], [], []
+    while wKpos[0] < 8:  # up
+        if board[wKpos[0]][wKpos[1]] in ['wr', 'wQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1]
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in black_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['wp', 'wK', 'wk', 'wb'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'wr', 'wQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['wr', 'wQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[0] - dummy[0]) - 1):
+                dummy[0], dummy[1] = dummy[0] + 1, dummy[1]
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[0] += 1
+    wKpos, preventor, line = [a[0], a[1] + 1], [], []
+    while wKpos[1] < 8:  # left
+        if board[wKpos[0]][wKpos[1]] in ['wr', 'wQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[1] - dummy[1]) - 1):
+                dummy[0], dummy[1] = dummy[0], dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in black_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['wp', 'wK', 'wk', 'wb'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'wr', 'wQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['wr', 'wQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[1] - dummy[1]) - 1):
+                dummy[0], dummy[1] = dummy[0], dummy[1] + 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[1] += 1
+    wKpos, preventor, line = [a[0], a[1] - 1], [], []
+    while wKpos[1] > -1:  # right
+        if board[wKpos[0]][wKpos[1]] in ['wr', 'wQ'] and preventor == []:
+            thecheck = list(wKpos)
+            dummy = list(a)
+            for h in range(abs(wKpos[1] - dummy[1]) - 1):
+                dummy[0], dummy[1] = dummy[0], dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            check.append([board[thecheck[0]][thecheck[1]], thecheck, line])
+            break
+        elif board[wKpos[0]][wKpos[1]] in black_pieces and preventor == []:
+            preventor = list(wKpos)
+        elif board[wKpos[0]][wKpos[1]] in ['wp', 'wK', 'wk', 'wb'] and preventor == []:
+            break
+        elif board[wKpos[0]][wKpos[1]] not in ['', 'wr', 'wQ'] and preventor != []:
+            break
+        elif board[wKpos[0]][wKpos[1]] in ['wr', 'wQ'] and preventor != []:
+            dummy = list(a)
+            for h in range(abs(wKpos[1] - dummy[1]) - 1):
+                dummy[0], dummy[1] = dummy[0], dummy[1] - 1
+                line.append([dummy[0], dummy[1]])
+            line.remove(preventor)
+            preventing.append([preventor, remdup(line)])
+            break
+        wKpos[1] -= 1
+    for knight in listforknight:
+        try:
+            if -1 < a[0] + knight[0] < 8 and -1 < a[1] + knight[1] < 8:
+                if board[a[0] + knight[0]][a[1] + knight[1]] == 'wk':
+                    check.append(['wk', [a[0] + knight[0], a[1] + knight[1]], []])
+        except IndexError:
+            pass
+    try:
+        if board[a[0] + 1][a[1] - 1] == 'wp':
+            check.append(['wp', [a[0] - 1, a[1] - 1], []])
+        if board[a[0] + 1][a[1] + 1] == 'wp':
+            check.append(['wp', [a[0] - 1, a[1] + 1], []])
+    except IndexError:
+        pass
+    return [check, preventing]
+
+
+def potential_moves(piece, pos):
+    if piece[0] == 'w':
+        colour = 'w'
+    elif piece[0] == 'b':
+        colour = 'b'
+    list_to_remove, behindcheckblack, behindcheckwhite, list_to_return, whitewon, blackwon = [], [], [], [], False, False
+    listforknight = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]
+    listking = [[1, 1], [1, 0], [1, -1], [0, 1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]
+    if piece == 'bp':
+        try:
+            if board[pos[0] + 1][pos[1] - 1] in white_pieces:
+                list_to_return.append([piece, pos, [pos[0] + 1, pos[1] - 1]])
+        except IndexError:
+            pass
+        try:
+            if board[pos[0] + 1][pos[1] + 1] in white_pieces:
+                list_to_return.append([piece, pos, [pos[0] + 1, pos[1] + 1]])
+        except IndexError:
+            pass
+        try:
+            if board[pos[0] + 1][pos[1]] == '':
+                list_to_return.append([piece, pos, [pos[0] + 1, pos[1]]])
+                if board[pos[0] + 2][pos[1]] == '' and pos[0] == 1:
+                    list_to_return.append([piece, pos, [pos[0] + 2, pos[1]]])
+        except IndexError:
+            pass
+    elif piece == 'br':
+        br = [pos[0], pos[1] + 1]
+        while br[1] < 8:  # left
+            if board[br[0]][br[1]] == '':
+                list_to_return.append([piece, pos, [br[0], br[1]]])
+            elif board[br[0]][br[1]] in white_pieces:
+                list_to_return.append([piece, pos, [br[0], br[1]]])
+                break
+            else:
+                break
+            br[1] += 1
+        br = [pos[0], pos[1] - 1]
+        while br[1] > -1:  # right
+            if board[br[0]][br[1]] == '':
+                list_to_return.append([piece, pos, [br[0], br[1]]])
+            elif board[br[0]][br[1]] in white_pieces:
+                list_to_return.append([piece, pos, [br[0], br[1]]])
+                break
+            else:
+                break
+            br[1] -= 1
+        br = [pos[0] - 1, pos[1]]
+        while br[0] > -1:  # back
+            if board[br[0]][br[1]] == '':
+                list_to_return.append([piece, pos, [br[0], br[1]]])
+            elif board[br[0]][br[1]] in white_pieces:
+                list_to_return.append([piece, pos, [br[0], br[1]]])
+                break
+            else:
+                break
+            br[0] -= 1
+        br = [pos[0] + 1, pos[1]]
+        while br[0] < 8:  # forward
+            if board[br[0]][br[1]] == '':
+                list_to_return.append([piece, pos, [br[0], br[1]]])
+            elif board[br[0]][br[1]] in white_pieces:
+                list_to_return.append([piece, pos, [br[0], br[1]]])
+                break
+            else:
+                break
+            br[0] += 1
+    elif piece == 'bk':
+        for gh in listforknight:
+            try:
+                if -1 < pos[0] + gh[0] < 8 and -1 < pos[1] + gh[1] < 8:
+                    if board[pos[0] + gh[0]][pos[1] + gh[1]] not in black_pieces:
+                        list_to_return.append([piece, pos, [pos[0] + gh[0], pos[1] + gh[1]]])
+            except Exception:
+                pass
+    elif piece == 'bb':
+        bb = [pos[0] - 1, pos[1] + 1]
+        while bb[0] > -1 and bb[1] < 8:  # bottomleft
+            if board[bb[0]][bb[1]] == '':
+                list_to_return.append([piece, pos, [bb[0], bb[1]]])
+            elif board[bb[0]][bb[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bb[0], bb[1]]])
+                break
+            else:
+                break
+            bb[0] -= 1
+            bb[1] += 1
+        bb = [pos[0] - 1, pos[1] - 1]
+        while bb[0] > -1 and bb[1] > -1:  # bottomright
+            if board[bb[0]][bb[1]] == '':
+                list_to_return.append([piece, pos, [bb[0], bb[1]]])
+            elif board[bb[0]][bb[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bb[0], bb[1]]])
+                break
+            else:
+                break
+            bb[0] -= 1
+            bb[1] -= 1
+        bb = [pos[0] + 1, pos[1] + 1]
+        while bb[0] < 8 and bb[1] < 8:  # topleft
+            if board[bb[0]][bb[1]] == '':
+                list_to_return.append([piece, pos, [bb[0], bb[1]]])
+            elif board[bb[0]][bb[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bb[0], bb[1]]])
+                break
+            else:
+                break
+            bb[0] += 1
+            bb[1] += 1
+        bb = [pos[0] + 1, pos[1] - 1]
+        while bb[0] < 8 and bb[1] > -1:  # topright
+            if board[bb[0]][bb[1]] == '':
+                list_to_return.append([piece, pos, [bb[0], bb[1]]])
+            elif board[bb[0]][bb[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bb[0], bb[1]]])
+                break
+            else:
+                break
+            bb[0] += 1
+            bb[1] -= 1
+    elif piece == 'bQ':
+        bQ = [pos[0] - 1, pos[1] + 1]
+        while bQ[0] > -1 and bQ[1] < 8:  # bottomleft
+            if board[bQ[0]][bQ[1]] == '':
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+            elif board[bQ[0]][bQ[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+                break
+            else:
+                break
+            bQ[0] -= 1
+            bQ[1] += 1
+        bQ = [pos[0] - 1, pos[1] - 1]
+        while bQ[0] > -1 and bQ[1] > -1:  # bottomright
+            if board[bQ[0]][bQ[1]] == '':
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+            elif board[bQ[0]][bQ[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+                break
+            else:
+                break
+            bQ[0] -= 1
+            bQ[1] -= 1
+        bQ = [pos[0] + 1, pos[1] + 1]
+        while bQ[0] < 8 and bQ[1] < 8:  # topleft
+            if board[bQ[0]][bQ[1]] == '':
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+            elif board[bQ[0]][bQ[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+                break
+            else:
+                break
+            bQ[0] += 1
+            bQ[1] += 1
+        bQ = [pos[0] + 1, pos[1] - 1]
+        while bQ[0] < 8 and bQ[1] > -1:  # topright
+            if board[bQ[0]][bQ[1]] == '':
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+            elif board[bQ[0]][bQ[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+                break
+            else:
+                break
+            bQ[0] += 1
+            bQ[1] -= 1
+        bQ = [pos[0] + 1, pos[1]]
+        while bQ[0] < 8:  # forward
+            if board[bQ[0]][bQ[1]] == '':
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+            elif board[bQ[0]][bQ[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+                break
+            else:
+                break
+            bQ[0] += 1
+        bQ = [pos[0] - 1, pos[1]]
+        while bQ[0] > -1:  # back
+            if board[bQ[0]][bQ[1]] == '':
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+            elif board[bQ[0]][bQ[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+                break
+            else:
+                break
+            bQ[0] -= 1
+        bQ = [pos[0], pos[1] + 1]
+        while bQ[1] < 8:  # left
+            if board[bQ[0]][bQ[1]] == '':
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+            elif board[bQ[0]][bQ[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+                break
+            else:
+                break
+            bQ[1] += 1
+        bQ = [pos[0], pos[1] - 1]
+        while bQ[1] > -1:  # right
+            if board[bQ[0]][bQ[1]] == '':
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+            elif board[bQ[0]][bQ[1]] in white_pieces:
+                list_to_return.append([piece, pos, [bQ[0], bQ[1]]])
+                break
+            else:
+                break
+            bQ[1] -= 1
+    elif piece == 'wp':
+        try:
+            if board[pos[0] - 1][pos[1] - 1] in black_pieces:
+                list_to_return.append([piece, pos, [pos[0] - 1, pos[1] - 1]])
+        except IndexError:
+            pass
+        try:
+            if board[pos[0] - 1][pos[1] + 1] in black_pieces:
+                list_to_return.append([piece, pos, [pos[0] - 1, pos[1] + 1]])
+        except IndexError:
+            pass
+        try:
+            if board[pos[0] - 1][pos[1]] == '':
+                list_to_return.append([piece, pos, [pos[0] - 1, pos[1]]])
+                if board[pos[0] - 2][pos[1]] == '' and pos[0] == 6:
+                    list_to_return.append([piece, pos, [pos[0] - 2, pos[1]]])
+        except IndexError:
+            pass
+    elif piece == 'wr':
+        wr = [pos[0], pos[1] + 1]
+        while wr[1] < 8:  # right
+            if board[wr[0]][wr[1]] == '':
+                list_to_return.append([piece, pos, [wr[0], wr[1]]])
+            elif board[wr[0]][wr[1]] in black_pieces:
+                list_to_return.append([piece, pos, [wr[0], wr[1]]])
+                break
+            else:
+                break
+            wr[1] += 1
+        wr = [pos[0], pos[1] - 1]
+        while wr[1] > -1:  # left
+            if board[wr[0]][wr[1]] == '':
+                list_to_return.append([piece, pos, [wr[0], wr[1]]])
+            elif board[wr[0]][wr[1]] in black_pieces:
+                list_to_return.append([piece, pos, [wr[0], wr[1]]])
+                break
+            else:
+                break
+            wr[1] -= 1
+        wr = [pos[0] - 1, pos[1]]
+        while wr[0] > -1:  # forward
+            if board[wr[0]][wr[1]] == '':
+                list_to_return.append([piece, pos, [wr[0], wr[1]]])
+            elif board[wr[0]][wr[1]] in black_pieces:
+                list_to_return.append([piece, pos, [wr[0], wr[1]]])
+                break
+            else:
+                break
+            wr[0] -= 1
+        wr = [pos[0] + 1, pos[1]]
+        while wr[0] < 8:  # back
+            if board[wr[0]][wr[1]] == '':
+                list_to_return.append([piece, pos, [wr[0], wr[1]]])
+            elif board[wr[0]][wr[1]] in black_pieces:
+                list_to_return.append([piece, pos, [wr[0], wr[1]]])
+                break
+            else:
+                break
+            wr[0] += 1
+    elif piece == 'wk':
+        for gh in listforknight:
+            try:
+                if -1 < pos[0] + gh[0] < 8 and -1 < pos[1] + gh[1] < 8:
+                    if board[pos[0] + gh[0]][pos[1] + gh[1]] not in white_pieces:
+                        list_to_return.append([piece, pos, [pos[0] + gh[0], pos[1] + gh[1]]])
+            except Exception:
+                pass
+    elif piece == 'wb':
+        wb = [pos[0] - 1, pos[1] + 1]
+        while wb[0] > -1 and wb[1] < 8:  # topright
+            try:
+                if board[wb[0]][wb[1]] == '':
+                    list_to_return.append([piece, pos, [wb[0], wb[1]]])
+                elif board[wb[0]][wb[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wb[0], wb[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wb[0] -= 1
+            wb[1] += 1
+        wb = [pos[0] - 1, pos[1] - 1]
+        while wb[0] > -1 and wb[1] > -1:  # topleft
+            try:
+                if board[wb[0]][wb[1]] == '':
+                    list_to_return.append([piece, pos, [wb[0], wb[1]]])
+                elif board[wb[0]][wb[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wb[0], wb[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wb[0] -= 1
+            wb[1] -= 1
+        wb = [pos[0] + 1, pos[1] + 1]
+        while wb[0] < 8 and wb[1] < 8:  # bottomright
+            try:
+                if board[wb[0]][wb[1]] == '':
+                    list_to_return.append([piece, pos, [wb[0], wb[1]]])
+                elif board[wb[0]][wb[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wb[0], wb[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wb[0] += 1
+            wb[1] += 1
+        wb = [pos[0] + 1, pos[1] - 1]
+        while wb[0] < 8 and wb[1] > -1:  # bottomleft
+            try:
+                if board[wb[0]][wb[1]] == '':
+                    list_to_return.append([piece, pos, [wb[0], wb[1]]])
+                elif board[wb[0]][wb[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wb[0], wb[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wb[0] += 1
+            wb[1] -= 1
+    elif piece == 'wQ':
+        wQ = [pos[0] - 1, pos[1] + 1]
+        while wQ[0] > -1 and wQ[1] < 8:  # topright
+            try:
+                if board[wQ[0]][wQ[1]] == '':
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                elif board[wQ[0]][wQ[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wQ[0] -= 1
+            wQ[1] += 1
+        wQ = [pos[0] - 1, pos[1] - 1]
+        while wQ[0] > -1 and wQ[1] > -1:  # topleft
+            try:
+                if board[wQ[0]][wQ[1]] == '':
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                elif board[wQ[0]][wQ[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wQ[0] -= 1
+            wQ[1] -= 1
+        wQ = [pos[0] + 1, pos[1] + 1]
+        while wQ[0] < 8 and wQ[1] < 8:  # bottomright
+            try:
+                if board[wQ[0]][wQ[1]] == '':
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                elif board[wQ[0]][wQ[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wQ[0] += 1
+            wQ[1] += 1
+        wQ = [pos[0] + 1, pos[1] - 1]
+        while wQ[0] < 8 and wQ[1] > -1:  # bottomleft
+            try:
+                if board[wQ[0]][wQ[1]] == '':
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                elif board[wQ[0]][wQ[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wQ[0] += 1
+            wQ[1] -= 1
+        wQ = [pos[0] + 1, pos[1]]
+        while wQ[0] < 8:  # bottom
+            try:
+                if board[wQ[0]][wQ[1]] == '':
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                elif board[wQ[0]][wQ[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wQ[0] += 1
+        wQ = [pos[0] - 1, pos[1]]
+        while wQ[0] > -1:  # top
+            try:
+                if board[wQ[0]][wQ[1]] == '':
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                elif board[wQ[0]][wQ[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wQ[0] -= 1
+        wQ = [pos[0], pos[1] + 1]
+        while wQ[1] < 8:  # right
+            try:
+                if board[wQ[0]][wQ[1]] == '':
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                elif board[wQ[0]][wQ[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wQ[1] += 1
+        wQ = [pos[0], pos[1] - 1]
+        while wQ[1] > -1:  # left
+            try:
+                if board[wQ[0]][wQ[1]] == '':
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                elif board[wQ[0]][wQ[1]] in black_pieces:
+                    list_to_return.append([piece, pos, [wQ[0], wQ[1]]])
+                    break
+                else:
+                    break
+            except Exception:
+                pass
+            wQ[1] -= 1
+    if colour == 'b':
+        if piece != 'bK':
+            for y in list_of_black_pieces:
+                if y[0] == 'bK':
+                    a = y[1]
+            listofcheckblack = checkblack(a)
+            length_of_check = len(listofcheckblack[0])
+            if listofcheckblack[1]:
+                for o in listofcheckblack[1][0]:
+                    temporarylist = []
+                    for b in list_to_return:
+                        try:
+                            if o[0] == b[1]:
+                                for r in o[1]:
+                                    if b[2] == r:
+                                        temporarylist.append(b)
+                                list_to_return.clear()
+                                list_to_return = list(temporarylist)
+                                temporarylist.clear()
+                        except IndexError:
+                            pass
+            if length_of_check == 2:
+                list_to_return.clear()
+            elif length_of_check == 1:
+                temporarylist = []
+                for k in list_to_return:
+                    for u in listofcheckblack[0]:
+                        try:
+                            if u[1] == k[2]:
+                                temporarylist.append(k)
+                        except IndexError:
+                            pass
+                        for n in u[2]:
+                            try:
+                                if n == k[2]:
+                                    temporarylist.append(k)
+                            except IndexError:
+                                pass
+                list_to_return = list(temporarylist)
+    if colour == 'w':
+        if piece != 'wK':
+            for y in list_of_white_pieces:
+                if y[0] == 'wK':
+                    a = y[1]
+            listofcheckwhite = checkwhite(a)
+            length_of_check = len(listofcheckwhite[0])
+            if listofcheckwhite[1]:
+                for o in listofcheckwhite[1][0]:
+                    temporarylist = []
+                    for b in list_to_return:
+                        try:
+                            if o[0] == b[1]:
+                                for r in o[1]:
+                                    if b[2] == r:
+                                        temporarylist.append(b)
+                                list_to_return.clear()
+                                list_to_return = list(temporarylist)
+                                temporarylist.clear()
+                        except IndexError:
+                            pass
+            if length_of_check == 2:
+                list_to_return.clear()
+            elif length_of_check == 1:
+                temporarylist = []
+                for k in list_to_return:
+                    for u in listofcheckwhite[0]:
+                        try:
+                            if u[1] == k[2]:
+                                temporarylist.append(k)
+                        except IndexError:
+                            pass
+                        for n in u[2]:
+                            try:
+                                if n == k[2]:
+                                    temporarylist.append(k)
+                            except IndexError:
+                                pass
+                list_to_return = list(temporarylist)
+    if piece == 'bK':
+        for t in listking:
+            try:
+                if board[pos[0] + t[0]][pos[1] + t[1]] not in black_pieces:
+                    list_to_return.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                    danger = potential_danger_for_the_piece_black([pos[0] + t[0], pos[1] + t[1]])
+                    if danger:
+                        for i in danger:
+                            if i[1] == 'wK':
+                                list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            if i[1] == 'wk':
+                                list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            if i[0] == [-1, 1] and i[1] == 'wp':
+                                list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            if i[0] == [-1, -1] and i[1] == 'wp':
+                                list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            if t == [-1, -1]:  # topleft
+                                if i[0] == [-1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [-1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topleft
+                                    list_to_return.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_return.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [-1, 0] and (i[1] == 'wQ' or i[1] == 'wr'):  # top
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 1, pos[1] + t[1]]])
+                                if i[0] == [0, -1] and (i[1] == 'wQ' or i[1] == 'wr'):  # left
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + 1]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] - 1]])
+                            elif t == [-1, 0]:  # top
+                                if i[0] == [-1, 0] and (i[1] == 'wQ' or i[1] == 'wr'):  # top
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [-1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] - 1]])
+                                if i[0] == [-1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] + 1]])
+                            elif t == [-1, 1]:  # topright
+                                if i[0] == [-1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [-1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [-1, 0] and (i[1] == 'wQ' or i[1] == 'wr'):  # top
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 1, pos[1] + t[1]]])
+                                if i[0] == [0, 1] and (i[1] == 'wQ' or i[1] == 'wr'):  # right
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + 0]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + -1]])
+                            elif t == [0, 1]:  # right
+                                if i[0] == [-1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 1, pos[1]]])
+                                if i[0] == [0, 1] and (i[1] == 'wQ' or i[1] == 'wr'):  # right
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1]]])
+                            elif t == [1, 1]:  # bottomright
+                                if i[0] == [-1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [0, 1] and (i[1] == 'wQ' or i[1] == 'wr'):  # right
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + 0]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] - 1]])
+                                if i[0] == [1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, 0] and (i[1] == 'wQ' or i[1] == 'wr'):  # bottom
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + t[1]]])
+                                if i[0] == [1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            elif t == [1, 0]:  # bottom
+                                if i[0] == [1, 0] and (i[1] == 'wQ' or i[1] == 'wr'):  # bottom
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] - 1]])
+                                if i[0] == [1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] + 1]])
+                            elif t == [1, -1]:  # bottomleft
+                                if i[0] == [-1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [0, -1] and (i[1] == 'wQ' or i[1] == 'wr'):  # left
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + 0]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] - 1]])
+                                if i[0] == [1, 1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [1, 0] and (i[1] == 'wQ' or i[1] == 'wr'):  # bottom
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + t[1]]])
+                                if i[0] == [1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                            elif t == [0, -1]:  # left
+                                if i[0] == [-1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # topleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 1, pos[1] + 0]])
+                                if i[0] == [0, -1] and (i[1] == 'wQ' or i[1] == 'wr'):  # left
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, -1] and (i[1] == 'wQ' or i[1] == 'wb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + 0]])
+                list_to_remove = list(remdup(list_to_remove))
+                for h in list_to_remove:
+                    if h in list_to_return:
+                        list_to_return.remove(h)
+            except IndexError:
+                pass
+        if didtherookmoveoneb == 0 and didthekingmoveblack == 0 and board[0][5] == '' and board[0][6] == '':
+            thedanger = False
+            for i in range(1, 4):
+                dangerr = potential_danger_for_the_piece_white([0, i + 3])
+                if dangerr:
+                    thedanger = True
+            if not thedanger:
+                list_to_return.append([piece, pos, [pos[0], pos[1] - 2]])
+        elif didtherookmovetwob == 0 and didthekingmoveblack == 0 and board[0][3] == '' and board[0][2] == '' and \
+                board[0][1] == '':
+            thedanger = False
+            for i in range(1, 5):
+                dangerr = potential_danger_for_the_piece_white([0, i])
+                if dangerr:
+                    thedanger = True
+            if not thedanger:
+                list_to_return.append([piece, pos, [pos[0], pos[1] + 2]])
+    if piece == 'wK':
+        for t in listking:
+            try:
+                if board[pos[0] + t[0]][pos[1] + t[1]] not in white_pieces:
+                    list_to_return.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                    danger = potential_danger_for_the_piece_white([pos[0] + t[0], pos[1] + t[1]])
+                    if danger:
+                        for i in danger:
+                            if i[1] == 'bK':
+                                list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            if i[1] == 'bk':
+                                list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            if i[0] == [-1, 1] and i[1] == 'bp':
+                                list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            if i[0] == [-1, -1] and i[1] == 'bp':
+                                list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            if t == [-1, -1]:  # topleft
+                                if i[0] == [-1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [-1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topleft
+                                    list_to_return.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_return.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [-1, 0] and (i[1] == 'bQ' or i[1] == 'br'):  # top
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 1, pos[1] + t[1]]])
+                                if i[0] == [0, -1] and (i[1] == 'bQ' or i[1] == 'br'):  # left
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + 1]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] - 1]])
+                            elif t == [-1, 0]:  # top
+                                if i[0] == [-1, 0] and (i[1] == 'bQ' or i[1] == 'br'):  # top
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [-1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] - 1]])
+                                if i[0] == [-1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] + 1]])
+                            elif t == [-1, 1]:  # topright
+                                if i[0] == [-1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [-1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [-1, 0] and (i[1] == 'bQ' or i[1] == 'br'):  # top
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 1, pos[1] + t[1]]])
+                                if i[0] == [0, 1] and (i[1] == 'bQ' or i[1] == 'br'):  # right
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + 0]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + -1]])
+                            elif t == [0, 1]:  # right
+                                if i[0] == [-1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 1, pos[1]]])
+                                if i[0] == [0, 1] and (i[1] == 'bQ' or i[1] == 'br'):  # right
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1]]])
+                            elif t == [1, 1]:  # bottomright
+                                if i[0] == [-1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [0, 1] and (i[1] == 'bQ' or i[1] == 'br'):  # right
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + 0]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] - 1]])
+                                if i[0] == [1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, 0] and (i[1] == 'bQ' or i[1] == 'br'):  # bottom
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + t[1]]])
+                                if i[0] == [1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                            elif t == [1, 0]:  # bottom
+                                if i[0] == [1, 0] and (i[1] == 'bQ' or i[1] == 'br'):  # bottom
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] - 1]])
+                                if i[0] == [1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] + 1]])
+                            elif t == [1, -1]:  # bottomleft
+                                if i[0] == [-1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [0, -1] and (i[1] == 'bQ' or i[1] == 'br'):  # left
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + 0]])
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] - 1]])
+                                if i[0] == [1, 1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomright
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                if i[0] == [1, 0] and (i[1] == 'bQ' or i[1] == 'br'):  # bottom
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 0, pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + t[1]]])
+                                if i[0] == [1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                            elif t == [0, -1]:  # left
+                                if i[0] == [-1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # topleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] + 1, pos[1] + 0]])
+                                if i[0] == [0, -1] and (i[1] == 'bQ' or i[1] == 'br'):  # left
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - t[0], pos[1] - t[1]]])
+                                if i[0] == [1, -1] and (i[1] == 'bQ' or i[1] == 'bb'):  # bottomleft
+                                    list_to_remove.append([piece, pos, [pos[0] + t[0], pos[1] + t[1]]])
+                                    list_to_remove.append([piece, pos, [pos[0] - 1, pos[1] + 0]])
+                list_to_remove = list(remdup(list_to_remove))
+                for h in list_to_remove:
+                    if h in list_to_return:
+                        list_to_return.remove(h)
+            except IndexError:
+                pass
+        if didtherookmoveonewhite == 0 and didthekingmovethoughwhite == 0 and board[7][3] == '' and board[7][
+            2] == '' and board[7][1] == '':
+            thedanger = False
+            for i in range(1, 5):
+                dangerr = potential_danger_for_the_piece_white([7, i])
+                if dangerr:
+                    thedanger = True
+            if not thedanger:
+                list_to_return.append([piece, pos, [pos[0], pos[1] - 2]])
+        elif didtherookmovetwowhite == 0 and didthekingmovethoughwhite == 0 and board[7][5] == '' and board[7][6] == '':
+            thedanger = False
+            for i in range(1, 4):
+                dangerr = potential_danger_for_the_piece_white([7, i + 3])
+                if dangerr:
+                    thedanger = True
+            if not thedanger:
+                list_to_return.append([piece, pos, [pos[0], pos[1] + 2]])
+    return list_to_return
+
+
+def draw_window(a):
+    Display.fill(white)
+    for i in range(1, 9, 2):
+        for x in range(0, 8, 2):
+            pygame.draw.rect(Display, brown, (0 + x * 100, 0 + i * 100, 100, 100))
+    for i in range(0, 8, 2):
+        for j in range(1, 9, 2):
+            pygame.draw.rect(Display, brown, (0 + j * 100, 0 + i * 100, 100, 100))
+    if choosethepiece != 0:
+        if white_turn == True:
+            Display.blit(wbs, (choosethepiece[1] * 100, choosethepiece[0] * 100))
+            Display.blit(wQs, (choosethepiece[1] * 100, choosethepiece[0] * 100 + 50))
+            Display.blit(wrs, (choosethepiece[1] * 100 + 50, choosethepiece[0] * 100))
+            Display.blit(wks, (choosethepiece[1] * 100 + 50, choosethepiece[0] * 100 + 50))
+        if black_turn == True:
+            Display.blit(bbs, (700 - choosethepiece[1] * 100, 700 - choosethepiece[0] * 100))
+            Display.blit(bQs, (700 - choosethepiece[1] * 100, 700 - choosethepiece[0] * 100 + 50))
+            Display.blit(brs, (700 - choosethepiece[1] * 100 + 50, 700 - choosethepiece[0] * 100))
+            Display.blit(bks, (700 - choosethepiece[1] * 100 + 50, 700 - choosethepiece[0] * 100 + 50))
+    place_figure(a)
+    timerme = str(datetime.timedelta(seconds=timebeing))
+    timeropp = str(datetime.timedelta(seconds=your_opponent_time))
+    draw_timermine = timer_FONT.render(timerme, 1, black)
+    draw_timeropp = timer_FONT.render(timeropp, 1, black)
+    Display.blit(draw_timermine, (800, 500))
+    Display.blit(draw_timeropp, (800, 400))
+    pygame.display.update()
+
+
+def replace(piece):
+    global choosethepiece, moved
+    board[choosethepiece[0]][choosethepiece[1]] = piece
+    turnchange()
+    sendinfo(piece, str(pospos), str(choosethepiece))
+    choosethepiece = 0
+    moved = True
+
+
+def draw_winner(text):
+    draw_text = WINNER_FONT.render(text, 1, black)
+    Display.blit(draw_text, (WIDTH / 2 - 350, HEIGHT / 2 - 100))
+    pygame.display.update()
+    pygame.time.delay(5000)
+
+
+host = input('Please enter server ip (without port) ')
+port = int(input('Please enter server port '))
+
+board = [['br', 'bk', 'bb', 'bQ', 'bK', 'bb', 'bk', 'br'], \
+         ['bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp', 'bp'], \
+         ['', '', '', '', '', '', '', ''], \
+         ['', '', '', '', '', '', '', ''], \
+         ['', '', '', '', '', '', '', ''], \
+         ['', '', '', '', '', '', '', ''], \
+         ['wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp', 'wp'], \
+         ['wr', 'wk', 'wb', 'wQ', 'wK', 'wb', 'wk', 'wr']]
+
+list_of_potential_moves_white = []
+list_of_potential_moves_black = []
+
+white_turn = True
+black_turn = False
+blackwon, whitewon = False, False
+wanna_continue = 1
+list_of_white_pieces = []
+list_of_black_pieces = []
+choosethepiece = 0
+updatethepieces()
+winner_text = ""
+pos = 'None'
+move = 'None'
+run = True
+initiation_process = True
+mousepos = 1
+firstchoice, secondchoice = 1, 0
+secondtile, secondclick = 0, 0
+didtherookmoveoneb = 0
+didthekingmoveblack = 0
+didtherookmovetwob = 0
+didthekingmovethoughwhite = 0
+didtherookmoveonewhite = 0
+didtherookmovetwowhite = 0
+timebeing = 600
+your_opponent_time = 600
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host, port))
+s.send('hey, server'.encode('utf-8'))
+data = s.recv(1024)
+if str(data.decode('utf-8')) == 'CONN':
+    print('You are connected to the server')
+data = s.recv(1024)
+
+Display = pygame.display.set_mode((WIDTH, HEIGHT))
+
+if str(data.decode('utf-8')) == 'white':
+    thecolourrr, we_are_white_pieces, we_are_black_pieces = 'white', True, False
+    moved = False
+    start_new_thread(threaded, (we_are_white_pieces, we_are_black_pieces))
+
+elif str(data.decode('utf-8')) == 'black':
+    thecolourrr, we_are_white_pieces, we_are_black_pieces = 'black', False, True
+    start_new_thread(threaded, (we_are_black_pieces, we_are_white_pieces))
+    moved = True
+
+start_new_thread(thread_timer, (timebeing, your_opponent_time))
+start_new_thread(thread_window, (thecolourrr, 'whatever'))
+
+while run:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+        if moved == False:
+            if event.type == pygame.MOUSEBUTTONUP:
+                mousepos = pygame.mouse.get_pos()
+                mousepos = [mousepos[1], mousepos[0]]
+                if black_turn == True:
+                    mousepos = [800 - mousepos[0], 800 - mousepos[1]]
+                if firstchoice == 1 and secondchoice == 0:
+                    firstchoice, secondchoice = 0, 1
+                    firstclick = mousepos
+                    firsttile = board[mousepos[0] // 100][mousepos[1] // 100]
+                    if secondtile != 0:
+                        if choosethepiece != 0:
+                            try:
+                                if white_turn == True and we_are_white_pieces == True:
+                                    if choosethepiece[0] * 100 < firstclick[0] < choosethepiece[0] * 100 + 50 and \
+                                            choosethepiece[1] * 100 < firstclick[1] < choosethepiece[1] * 100 + 50:
+                                        replace('wb')
+                                        isitawinwin('white')
+                                    elif choosethepiece[0] * 100 < firstclick[0] < choosethepiece[0] * 100 + 50 and \
+                                            choosethepiece[1] * 100 + 50 < firstclick[1] < choosethepiece[
+                                        1] * 100 + 100:
+                                        replace('wr')
+                                        isitawinwin('white')
+                                    elif (choosethepiece[0] * 100 + 50 < firstclick[0] < choosethepiece[
+                                        0] * 100 + 100) and choosethepiece[1] * 100 < firstclick[1] < choosethepiece[
+                                        1] * 100 + 50:
+                                        replace('wQ')
+                                        isitawinwin('white')
+                                    elif choosethepiece[0] * 100 + 50 < firstclick[0] < choosethepiece[
+                                        0] * 100 + 100 and choosethepiece[1] * 100 + 50 < firstclick[1] < \
+                                            choosethepiece[1] * 100 + 100:
+                                        replace('wk')
+                                        isitawinwin('white')
+                                elif black_turn == True and we_are_black_pieces == True:
+                                    if choosethepiece[0] * 100 < firstclick[0] < choosethepiece[0] * 100 + 50 and \
+                                            choosethepiece[1] * 100 < firstclick[1] < choosethepiece[1] * 100 + 50:
+                                        replace('bk')
+                                        isitawinwin('black')
+                                    elif choosethepiece[0] * 100 < firstclick[0] < choosethepiece[0] * 100 + 50 and \
+                                            choosethepiece[1] * 100 + 50 < firstclick[1] < choosethepiece[
+                                        1] * 100 + 100:
+                                        replace('bQ')
+                                        isitawinwin('black')
+                                    elif choosethepiece[0] * 100 + 50 < firstclick[0] < choosethepiece[
+                                        0] * 100 + 100 and choosethepiece[1] * 100 < firstclick[1] < choosethepiece[
+                                        1] * 100 + 50:
+                                        replace('br')
+                                        isitawinwin('black')
+                                    elif choosethepiece[0] * 100 + 50 < firstclick[0] < choosethepiece[
+                                        0] * 100 + 100 and choosethepiece[1] * 100 + 50 < firstclick[1] < \
+                                            choosethepiece[1] * 100 + 100:
+                                        replace('bb')
+                                        isitawinwin('black')
+                            except Exception:
+                                pass
+                        elif ((secondtile in white_pieces) and (firsttile not in white_pieces) and (
+                                white_turn == True and we_are_white_pieces == True)) or \
+                                ((secondtile in black_pieces) and (firsttile not in black_pieces) and (
+                                        black_turn == True and we_are_black_pieces == True)):
+                            a = potential_moves(secondtile, [secondclick[0] // 100, secondclick[1] // 100])
+                            for b in a:
+                                if [firstclick[0] // 100, firstclick[1] // 100] == b[2]:
+                                    movement(secondtile, [secondclick[0] // 100, secondclick[1] // 100],
+                                             [firstclick[0] // 100, firstclick[1] // 100])
+                                    updatethepieces()
+                elif firstchoice == 0 and secondchoice == 1:
+                    firstchoice, secondchoice = 1, 0
+                    secondclick = mousepos
+                    secondtile = board[mousepos[0] // 100][mousepos[1] // 100]
+                    if choosethepiece != 0:
+                        try:
+                            if white_turn == True and we_are_white_pieces == True:
+                                if choosethepiece[0] * 100 < secondclick[0] < choosethepiece[0] * 100 + 50 and \
+                                        choosethepiece[1] * 100 < secondclick[1] < choosethepiece[1] * 100 + 50:
+                                    replace('wr')
+                                    isitawinwin('white')
+                                elif choosethepiece[0] * 100 < secondclick[0] < choosethepiece[0] * 100 + 50 and \
+                                        choosethepiece[1] * 100 + 50 < secondclick[1] < choosethepiece[1] * 100 + 100:
+                                    replace('wb')
+                                    isitawinwin('white')
+                                elif choosethepiece[0] * 100 + 50 < secondclick[0] < choosethepiece[0] * 100 + 100 and \
+                                        choosethepiece[1] * 100 < secondclick[1] < choosethepiece[1] * 100 + 50:
+                                    replace('wQ')
+                                    isitawinwin('white')
+                                elif choosethepiece[0] * 100 + 50 < secondclick[0] < choosethepiece[0] * 100 + 100 and \
+                                        choosethepiece[1] * 100 + 50 < secondclick[1] < choosethepiece[1] * 100 + 100:
+                                    replace('wk')
+                                    isitawinwin('white')
+                            elif black_turn == True and we_are_black_pieces == True:
+                                if choosethepiece[0] * 100 < secondclick[0] < choosethepiece[0] * 100 + 50 and \
+                                        choosethepiece[1] * 100 < secondclick[1] < choosethepiece[1] * 100 + 50:
+                                    replace('bk')
+                                    isitawinwin('black')
+                                    choosethepiece = 0
+                                elif choosethepiece[0] * 100 < secondclick[0] < choosethepiece[0] * 100 + 50 and \
+                                        choosethepiece[1] * 100 + 50 < secondclick[1] < choosethepiece[1] * 100 + 100:
+                                    replace('bQ')
+                                    isitawinwin('black')
+                                    choosethepiece = 0
+                                elif choosethepiece[0] * 100 + 50 < secondclick[0] < choosethepiece[0] * 100 + 100 and \
+                                        choosethepiece[1] * 100 < secondclick[1] < choosethepiece[1] * 100 + 50:
+                                    replace('br')
+                                    isitawinwin('black')
+                                    choosethepiece = 0
+                                elif choosethepiece[0] * 100 + 50 < secondclick[0] < choosethepiece[0] * 100 + 100 and \
+                                        choosethepiece[1] * 100 + 50 < secondclick[1] < choosethepiece[1] * 100 + 100:
+                                    replace('bb')
+                                    isitawinwin('black')
+                        except Exception:
+                            pass
+                    elif ((firsttile in white_pieces) and (secondtile not in white_pieces) and (
+                            white_turn == True and we_are_white_pieces == True)) or \
+                            ((firsttile in black_pieces) and (secondtile not in black_pieces) and (
+                                    black_turn == True and we_are_black_pieces == True)):
+                        a = potential_moves(firsttile, [firstclick[0] // 100, firstclick[1] // 100])
+                        for b in a:
+                            if [secondclick[0] // 100, secondclick[1] // 100] == b[2]:
+                                movement(firsttile, [firstclick[0] // 100, firstclick[1] // 100],
+                                         [secondclick[0] // 100, secondclick[1] // 100])
+                                updatethepieces()
+    if blackwon == True:
+        winner_text = "Black Wins!"
+    elif whitewon == True:
+        winner_text = "White Wins!"
+    if winner_text != "":
+        blackwon, whitewon, white_turn, black_turn = False, False, False, False
+        moved = True
+        time.sleep(1)
+        winner_text = ""
+        initiation_process = True
+        print('**********************************************************************')
+        print('----------------------------------------------------------------------')
+        print('**********************************************************************')
+        print('                                                                      ')
+        print('Do you want to play again? If yes, type "stay" or "switch" to switch sides. ')
+        do = True
+        while initiation_process:
+            if do: # Because if while loop gets shut down while input function is not answered it gives error, so one message at a time.
+                wanna_continue = str(input(''))
+                if wanna_continue == 'stay' or wanna_continue == 'switch':
+                    s.send((wanna_continue).encode('utf-8'))
+                    print('Waiting for a reply from opponent')
+                    do = False
+                else:
+                    print('Please either enter "stay" or "switch"')
+s.close()
